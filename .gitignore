@@ -1,0 +1,32 @@
+# Byte-compiled Python files
+*.py[cod]
+
+# Log files
+*.log
+
+# Data files
+input/*/*.csv
+input/*/*.json
+input/*/*.xls
+
+input/dogs-vs-cats/*
+input/stage_2_images/*
+
+# Jupyter notebook checkpoints
+*.ipynb_checkpoints
+
+# models
+models/*.bin
+
+# Virtual environment files
+env/
+venv/
+virtualenv/
+
+# IDE files
+.vscode/
+.pycharm/
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
