@@ -4,13 +4,9 @@ import joblib
 import pandas as pd
 import numpy as np
 from sklearn import metrics, preprocessing
-from tensorflow.keras import layers
-
-from tensorflow.keras import optimizers
-from tensorflow.keras.models import Model, load_model
-from tensorflow.keras import callbacks
-from tensorflow.keras import backend as K
-from tensorflow.keras import utils
+import torch 
+import torch.nn as nn
+import torch.nn.functional as F
 
 def create_model(data, catcols):
     """
@@ -33,35 +29,33 @@ def create_model(data, catcols):
 
         embed_dim = int(min(np.ceil((num_unique_values)/2), 50))
 
-        inp = layers.Input(shape=(1,))
+        inp = nn.Embedding(num_unique_values + 1, embed_dim)
 
-        out = layers.Embedding(
-            num_unique_values + 1, embed_dim, name=c
-        )(inp)
+        out = inp(torch.arange(num_unique_values + 1))
 
-        out = layers.SpatialDropout1D(0.3)(out)
+        out = F.dropout(out, 0.3)
 
-        out = layers.Reshape(target_shape = (embed_dim,))(out)
+        out = out.view(-1, embed_dim)
 
         inputs.append(inp)
 
         outputs.append(out)
 
-    x = layers.Concatenate()(outputs)
-    x = layers.BatchNormalization()(x)
+    x = torch.cat(outputs, dim=1)
+    x = nn.BatchNorm1d(x.shape[1])(x)
 
-    x = layers.Dense(300, activation = "relu")(x)
+    x = torch.ReLU()(nn.Linear(x.shape[1], 300)(x))
 
-    x = layers.Dropout(0.3)(x)
-    x = layers.BatchNormalization()(x)
+    x = F.dropout(x, 0.3)
+    x = nn.BatchNorm1d(x.shape[1])(x)
 
-    x = layers.Dense(300, activation="relu")(x)
-    x = layers.Dropout(0.3)(x)
-    x = layers.BatchNormalization()(x)
+    x = nn.ReLU()(nn.Linear(x.shape[1], 300)(x))
+    x = F.dropout(x, 0.3)
+    x = nn.BatchNorm1d(x.shape[1])(x)
 
-    y = layers.Dense(2, activation="softmax")(x)
+    y = nn.Softmax(dim=1)(nn.Linear(x.shape[1], 2)(x))
 
-    model = Model(inputs=inputs, outputs=y)
+    model = nn.Sequential(*inputs, nn.Linear(x.shape[1], 2))
 
     model.compile(loss="binary_crossentropy", optimizer="adam")
     return model
